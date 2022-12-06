@@ -1,0 +1,938 @@
+/* ***************************************
+  @author    Mithusen Selvarajah
+  @SID       220383710
+  @date      27 October 2022
+  @version   1
+
+    This program will allow the user to explore a dungeon.
+    The User is now able to play the full game. The user enters number in order to work their way throught the game fighting enemies and solving puzzles
+    until they reacht he throne room and defeat the dragon
+   ****************************************/
+
+import java.util.Scanner;
+
+/* ***************************************************
+ Create a new type (a record) called character that records data about each character in the game
+ An character has:
+ A name to identify each different character
+ Attack which shows how much damage they will deal in a fight
+ Defence which shows how much damage they reduce when in a fight
+ Hp which shows how much damage they can take before losing a fight
+*/
+
+class character{
+    String name;
+    int id;
+    int attack;
+    int defence;
+    int hp;
+}
+
+/* ***************************************************
+ Create a new type (a record) called room that records data about each room in the game
+ An roome has:
+ moveUp,moveDown,moveLeft,moveRight which shows which other rooms you can move to from the room your currently in
+ locked which chows if you can move to the room
+ roomNumber which identifies which will be used in to map to show the position of the room
+ an array of options which shows all the possible options available while in the room
+ an array that tracks which options have been completed
+ */
+class Room{
+    boolean moveUp;
+    boolean moveDown;
+    boolean moveLeft;
+    boolean moveRight;
+    boolean locked;
+    boolean fightComplete;
+    
+    String roomName;
+    
+    int roomNumber;
+    
+    final int numOptions = 4;
+    String[] options = new String[numOptions];
+    boolean[] optionComplete = new boolean[numOptions];
+    
+}
+
+class castleExplorer
+{
+    public static void main (String [] a)
+    {
+        method_call(); //Change this to a call to the method doing the work
+        System.exit(0);
+    }
+    
+   public static void print(String message){ //outputs a message
+        System.out.println(message);
+    }
+
+    public static String inputString(String message){ //detects and returns user inputs using scanner 
+        String userInput;
+        Scanner scanner = new Scanner(System.in);
+        print(message);
+        userInput = scanner.nextLine();
+        return userInput;
+    }
+
+    public static int inputInt(String message){ //detects and returns user inputs using scanner 
+        int userInput = 0;
+        Scanner scanner = new Scanner(System.in);
+        print(message);
+
+        if(scanner.hasNextInt()){ //checks if the user has input an integer
+            userInput = scanner.nextInt();
+            if(userInput < 0){//checks if the input is positive
+                print("Please enter an Integer >= 0."); 
+                userInput = inputInt(message);
+            }
+        }else{
+            print("Please enter a valid Integer."); //asks for another input 
+            userInput = inputInt(message);
+        }
+
+        return userInput;
+    }
+
+    public static int Int(String string){ //converts a string to an int
+        return Integer.parseInt(string);
+    }
+    
+    /* ***************************************************
+     ** Methods defining an character ADT
+     ** Theses are the only ways we should access an character
+     ** getName, getId, getAttack, getDefence, getHp 
+     ** Create an character record
+     ** setName, setId, setAttack, setDefence, setHp
+     ** List any additional functions that can be performed on the ADT
+     **/
+
+     // List any prerequisits for creating the ADT and any other information about initializing the ADT
+
+    public static void setName(character newCharacter, String newName){
+        newCharacter.name = newName;
+    }
+
+    public static void setId(character newCharacter, int newId){
+        newCharacter.id = newId;
+    }
+
+    public static void setAttack(character newCharacter, int newAttack){
+        newCharacter.attack = newAttack;
+    }
+
+    public static void setDefence(character newCharacter, int newDefence){
+        newCharacter.defence = newDefence;
+    }
+
+    public static void setHp(character newCharacter, int newHp){
+        newCharacter.hp = newHp;
+    }
+
+    public static String getName(character newCharacter){ 
+        return newCharacter.name;
+    }
+
+    public static int getId(character newCharacter){ 
+        return newCharacter.id;
+    }
+
+    public static int getAttack(character newCharacter){ 
+        return newCharacter.attack;
+    }
+
+    public static int getDefence(character newCharacter){ 
+        return newCharacter.defence;
+    }
+
+    public static int getHp(character newCharacter){ 
+        return newCharacter.hp;
+    }
+
+    public static character createCharacter(String name, int id, int attack,int defence, int hp){
+        character newCharacter = new character();
+        setName(newCharacter, name);
+        setId(newCharacter, id);
+        setAttack(newCharacter, attack);
+        setDefence(newCharacter, defence);
+        setHp(newCharacter, hp);
+        return newCharacter;
+    }
+    
+    public static int generateOption1(int turn){ //generates to moves for enemy 1
+        int[] options = {1,2,3};
+        return options[turn % 3]; //picks an option from the array of options
+    }
+
+    public static int generateOption2(int turn){ //generates to moves for enemy 2
+        int[] options = {1,3,1,2};
+
+        return options[turn % 4];//picks an option from the array of options
+    }
+
+    public static int generateOption3(int turn){ //generates to moves for enemy 3
+        int[] options = {3,2,1,1,3};
+        return options[turn % 5];//picks an option from the array of options
+    }
+
+    public static boolean checkPrime(int number){ //checks if a number is prime
+        boolean prime = true;
+        if( number == 0 || number == 1){ //returns false for 0 and 1
+            prime = false;
+        }else if( number == 2){ //returns trues for 2 
+            prime = true;
+        }else{ //if the number is greater than 2 it checks if it has any factro using MOD
+            for(int i = 2; i < number; i++){
+                if((number % i) == 0){
+                    prime = false;
+                }
+            }
+        }
+
+        return prime;
+    }
+
+    public static int generateOption4(int turn){//generates to moves for enemy 4
+        if(checkPrime(turn)){ //returns attack for prime numbers
+            return 1;
+        }else if((turn % 2) == 0){ //returns defend for even numbers
+            return 2;
+        }else{
+            return 3; //returns counter for odd non-primes
+        }
+
+    }
+
+    public static int generateEnemyOption(character enemy,int turn){ //selects which function to call based on which enemy is fighting
+        int enemyOption = 1;
+        if(getId(enemy) == 1){
+            enemyOption = generateOption1(turn);
+        }else if(getId(enemy) == 2){
+            enemyOption = generateOption2(turn);
+        }else if(getId(enemy) == 3){
+            enemyOption = generateOption3(turn);
+        }else if(getId(enemy) == 4){
+            enemyOption = generateOption4(turn);
+        }
+
+        return enemyOption;
+    }
+    
+    public static void bothAttack(character MC, character enemy){ //runs if both characters choose to attack
+        setHp(MC,(getHp(MC) - getAttack(enemy)));
+        setHp(enemy,(getHp(enemy) - getAttack(MC))); //adjusts the hp of both characters
+        print("Both you and the enemy attack");
+    }
+
+    public static void attackAndDefend(character MC,int userInput, character enemy){ // runs if one person chose to attack and the other defends
+        if(userInput == 1){
+            if((getAttack(MC) - getDefence(enemy)) >= 0){ //prevent the attacker from healing the enemy
+                setHp(enemy,(getHp(enemy) - (getAttack(MC) - getDefence(enemy))));  //adjusts the hp of the person who chose to defend
+            }
+            print("You attack but the " + getName(enemy) + " defends your hit.");
+        }else{
+            if((getAttack(enemy) - getDefence(MC)) >= 0){
+                setHp(MC,(getHp(MC) - (getAttack(enemy) - getDefence(MC))));
+            }
+            print("You manage to defend the " + getName(enemy) + "'s attack.");
+        }
+
+    }
+
+    public static void attackAndCounter(character MC,int userInput, character enemy){ // runs if one person chose to attack and the other counters
+        if(userInput == 1){
+            setHp(enemy,(getHp(enemy) - getAttack(MC))); //adjusts the hp of the character that chose to counter
+            print("The " + getName(enemy) + " goes for a counter and you get an attack in.");
+        }else{
+            setHp(MC,(getHp(MC) - getAttack(enemy)));
+            print("You try to counter but the " + getName(enemy) + " attacks.");
+        }
+
+    }
+
+    public static void counterAndDefend(character MC,int userInput, character enemy){ // runs if one person chose to counter and the other defends
+        if(userInput == 3){ //adjusts the hp of the character that chose to defend
+            setHp(enemy,(getHp(enemy) - getAttack(MC)));
+            print("The " + getName(enemy) + " defends and you successfully counter");
+        }else{
+            setHp(MC,(getHp(MC) - getAttack(enemy)));
+            print("You defend and the " + getName(enemy) + " counters");
+        }
+
+    }
+
+    public static void stalemate(character enemy, int userInput){ //runs if both characters chose to counter or defend
+        if(userInput ==  2){
+            print("You and the " + getName(enemy) + " both tried to defend");
+        }else{
+            print("You and the " + getName(enemy) + " both tried to counter");
+        }
+    }
+
+    public static void fight(character MC,int userInput, character enemy , int turn){
+        int enemyOption = generateEnemyOption(enemy,turn); //generates the enemies choice
+
+        if((userInput == 1) && (enemyOption == 1)){ //selects which function to run based on what the user and the enemy chose
+            bothAttack(MC,enemy);
+        }else if((userInput == 2) && (enemyOption == 1) || (userInput == 1) && (enemyOption == 2)){
+            attackAndDefend(MC,userInput,enemy);
+        }else if((userInput == 3) && (enemyOption == 1) || (userInput == 1) && (enemyOption == 3)){
+            attackAndCounter(MC,userInput,enemy);
+        }else if((userInput == 3) && (enemyOption == 2) || (userInput == 2) && (enemyOption == 3)){
+            counterAndDefend(MC,userInput,enemy);
+        }else if((userInput == 3) && (enemyOption == 3) || (userInput == 2) && (enemyOption == 2)){
+            stalemate(enemy, userInput);
+        }
+    }    
+
+    public static void outputFightOptions(){ //outputs the options for the users
+        String[] options = {"1. attack", "2. defend", "3. counter"};
+        for(int i = 0; i < 3; i++){
+            print(options[i]);
+        }
+
+    }
+
+    public static boolean checkValidInput(int[] validMoves, int userInput, int totalOptions){//checks if ui is vaild 
+        boolean validMove = false;
+        for(int i = 0; i < totalOptions; i++){ // loops throught the array of valid options and checks if it contains what the user inputs 
+            if(validMoves[i] == userInput){
+                validMove  = true;
+            }
+        }
+        return validMove;
+    }    
+
+    public static int checkWinner(character MC, character enemy){//checks if eithr character has won the fight
+        int result = 0;
+        if(getHp(enemy) <= 0 && getHp(MC) > 0 ){ //checks if the users health or the enemies health has droped bellow 0 
+            print("You have defeated the " + getName(enemy));
+            result = 1;
+        }else if (getHp(enemy) <= 0 && getHp(MC) <= 0){
+            print("You were able to defeated the " + getName(enemy) + " but it was able to land a fatal blow of you and you died.");
+            result = -1;
+        }else if (getHp(enemy) > 0 && getHp(MC) <= 0){
+            print("You have been defeated the " + getName(enemy));
+            result = -1;
+        }
+
+        return result;
+    }
+
+    public static int startFight(character MC, character enemy){//starts a fight 
+        int[] validInputs = {1,2,3};
+        final int maxValidInputs = 3;
+        int result = 0;
+        int userInput = 0;
+        int turn = 0;
+        boolean valid = true;
+
+        print("You are now fighting the " + getName(enemy));
+
+        while(result == 0){
+            print("Turn " + turn +":\nYour health:" + getHp(MC) + "\n" + getName(enemy) + "'s health:" + getHp(enemy)); //Outputs the turn number and each characters health
+            outputFightOptions();
+            userInput  = inputInt("Make your move"); //asks for user input and checks that it is valid
+            valid = checkValidInput(validInputs,userInput,maxValidInputs); 
+            while(valid == false){
+                print("Please enter a valid option");
+                userInput  = inputInt("Make your move");
+                valid = checkValidInput(validInputs,userInput,maxValidInputs);
+            }
+
+
+            fight(MC, userInput, enemy, turn); //procees the inputs
+            result = checkWinner(MC, enemy); //checks if someone has won
+            turn++;
+
+        }
+
+        return result;
+    }
+    
+    /* ***************************************************
+     ** Methods defining a Room ADT
+     ** Theses are the only ways we should access an ADTname
+     ** getMoveUp, getMoveDown, getMoveLeft, getMoveRight, getLocked, getOption, getOptionComplete
+     ** Create a Room record
+     ** setMoveUp, setMoveDown, setMoveLeft, setMoveRight, setLocked, setOption, setOptionComplete
+     ** setAllOptions is used when creating a room to set all the options in the room in one go 
+     ** getAllOptions is used to output all the options that aren't complete in the room
+     **/
+
+     // When creating a new room you need:
+     // An array of five elements that holds all the possible moves that can be made in the room
+     // The rooms number on the map
+     // An array of 4 elements that holds all the possible options in the room. The final option in the array has to be "Move to a new room".
+
+    public static void setMoveUp(Room room, boolean canMove){ //setters
+        room.moveUp = canMove;
+    }
+
+    public static void setMoveDown(Room room, boolean canMove){ //setters
+        room.moveDown = canMove;
+    }
+
+    public static void setMoveLeft(Room room, boolean canMove){ //setters
+        room.moveLeft = canMove;
+    }
+
+    public static void setMoveRight(Room room, boolean canMove){ //setters
+        room.moveRight = canMove;
+    }
+
+    public static void setLocked(Room room, boolean canMove){ //setters
+        room.locked = canMove;
+    }
+
+    public static void setFightComplete(Room room, boolean complete){ //setters
+        room.fightComplete = complete;
+    }
+
+    public static void setRoomName(Room room, String newRoomName){ //setters
+        room.roomName = newRoomName;
+    }
+
+    public static void setRoomNumber(Room room, int roomNum){ //setters
+        room.roomNumber = roomNum;
+    }
+
+    public static void setOption(Room room, int index, String option){ //setters
+        room.options[index] = option;
+    }
+
+    public static void setOptionComplete(Room room, int index, boolean isOptionComplete){ //setters
+        room.optionComplete[index] = isOptionComplete;
+    }
+
+    public static void setAllOptions(Room room, String[] roomOptions){ //setters
+        for(int i = 0; i < 4; i++){
+            setOption(room,i,roomOptions[i]);
+            if(roomOptions[i].equals("")){
+                setOptionComplete(room, i, true);
+            }else{
+                setOptionComplete(room, i, false);
+            }
+        }
+    }
+
+    public static Room createRoom(boolean[] validMoves, int roomNumber , String[] roomOptions , String roomName){ //setters
+        Room room = new Room();
+        setMoveUp(room,validMoves[0]);
+        setMoveDown(room,validMoves[1]);
+        setMoveLeft(room,validMoves[2]);
+        setMoveRight(room,validMoves[3]);
+        setLocked(room,validMoves[4]);
+        setFightComplete(room,validMoves[5]);
+        setRoomName(room, roomName);
+        setRoomNumber(room, roomNumber);
+        setAllOptions(room, roomOptions);
+
+        return room;
+    }
+
+    public static boolean getMoveUp(Room room){ //setters
+        return room.moveUp;
+    }
+
+    public static boolean getMoveDown(Room room){ //setters
+        return room.moveDown;
+    }
+
+    public static boolean getMoveLeft(Room room){ //setters
+        return room.moveLeft;
+    }
+
+    public static boolean getMoveRight(Room room){ //setters
+        return room.moveRight;
+    }
+
+    public static boolean getLocked(Room room){ //setters
+        return room.locked;
+    }
+
+    public static boolean getFightComplete(Room room){ //setters
+        return room.fightComplete;
+    }
+
+    public static int getRoomNumber(Room room){ //setters
+        return room.roomNumber;
+    }
+
+    public static String getRoomName(Room room){ //setters
+        return room.roomName;
+    }
+
+    public static String getOptions(Room room, int index){ //setters
+        return room.options[index];
+    }
+
+    public static boolean getOptionComplete(Room room, int index){ //setters
+        return room.optionComplete[index];
+    }
+
+    public static void getAllOptions(Room room){ //setters
+        for(int i = 0; i < 4; i++){
+            if(!(getOptionComplete(room, i))){
+                print(getOptions(room, i));
+            }
+
+        }
+    }
+
+    public static void optionCompleted(Room room, int index){ //setters
+        setOptionComplete(room, index, true);
+    }
+    
+    public static int search2DIntArrayR(int[][]array,int target,int arraySize){ //searchs a 2d array returning the row of the target element
+        int foundIndex = 0;
+        for(int i = 0; i < arraySize;i++){
+            for(int j = 0; j < arraySize;j++){
+                if(array[i][j] == target){
+                      foundIndex = i;
+                }
+            }
+        }
+        return foundIndex;
+    }
+
+    public static int search2DIntArrayC(int[][]array,int target,int arraySize){ //searchs a 2d array returning the column of the target element
+        int foundIndex = 0;
+        for (int i = 0; i < arraySize; i++){
+            for (int j= 0; j < arraySize; j++){
+                if(array[i][j] == target){
+                    foundIndex = j;
+                }
+            }
+        }
+        return foundIndex;
+    }
+
+    public static int searchRoomList(Room[]array,Room target,int arraySize){
+        int foundIndex = 0;
+        for(int i = 0; i < arraySize;i++){
+            if(array[i] == target){
+                foundIndex = i;
+            }
+        }
+        return foundIndex;
+    }
+
+    public static int checkMoveUp(int[][] map,Room[] roomList, Room currentRoom, int[] currentRoomMapindex){ //checks if the user can move up 
+        String newRoomName = "";
+        int newRoomNumber = -1;
+        if(getMoveUp(currentRoom)){//cehckss if the move is allowed
+            Room nextRoom = roomList[map[currentRoomMapindex[0] - 1][currentRoomMapindex[1]]]; //finds the next room
+            newRoomName = getRoomName(nextRoom);
+            if(!(getLocked(nextRoom))){//checks if the room is locked
+                print(newRoomName);
+                newRoomNumber = getRoomNumber(nextRoom);
+            }else{
+                print(newRoomName + " (Locked)"); //indicates to the user that the room is locked
+            }
+        }
+
+
+
+        return newRoomNumber;
+    }
+    public static int checkMoveDown(int[][] map,Room[] roomList, Room currentRoom, int[] currentRoomMapindex){ //checks if the user can move down
+        String newRoomName = "";
+        int newRoomNumber = -1;
+        if(getMoveDown(currentRoom)){
+            Room nextRoom = roomList[map[currentRoomMapindex[0] + 1][currentRoomMapindex[1]]];
+            newRoomName = getRoomName(nextRoom);
+            if(!(getLocked(nextRoom))){
+                print(newRoomName);
+                newRoomNumber = getRoomNumber(nextRoom);
+            }else{
+                print(newRoomName + " (Locked)");
+            }
+        }
+
+
+        return newRoomNumber;
+    }
+
+    public static int checkMoveLeft(int[][] map,Room[] roomList, Room currentRoom, int[] currentRoomMapindex){ //checks if the user can move left 
+        String newRoomName = "";
+        int newRoomNumber = -1;
+        if(getMoveLeft(currentRoom)){
+            Room nextRoom = roomList[map[currentRoomMapindex[0]][currentRoomMapindex[1] - 1]];
+            newRoomName = getRoomName(nextRoom);
+            if(!(getLocked(nextRoom))){
+                print(newRoomName);
+                newRoomNumber = getRoomNumber(nextRoom);
+            }else{
+                print(newRoomName + " (Locked)");
+            }
+        }
+
+
+
+        return newRoomNumber;
+    }
+
+    public static int checkMoveRight(int[][] map,Room[] roomList, Room currentRoom, int[] currentRoomMapindex){ //checks if the user can move right
+        String newRoomName = "";
+        int newRoomNumber = -1;
+        if(getMoveRight(currentRoom)){
+            Room nextRoom = roomList[map[currentRoomMapindex[0]][currentRoomMapindex[1] + 1]];
+            newRoomName = getRoomName(nextRoom);
+            if(!(getLocked(nextRoom))){
+                print(newRoomName);
+                newRoomNumber = getRoomNumber(nextRoom);
+            }else{
+                print(newRoomName + " (Locked)");
+            }
+        }
+
+
+
+        return newRoomNumber;
+    }
+
+    public static int askNextRoom(int[][] map,Room[] roomList, Room currentRoom, int[] currentRoomMapindex){
+        final int totalOptions = 4;
+        int[] validMoves = new int[totalOptions];
+        validMoves[0] = checkMoveUp( map, roomList, currentRoom, currentRoomMapindex); //generates all valid moves
+        validMoves[1] = checkMoveDown( map, roomList, currentRoom, currentRoomMapindex);
+        validMoves[2] = checkMoveLeft( map, roomList, currentRoom, currentRoomMapindex);
+        validMoves[3] = checkMoveRight( map, roomList, currentRoom, currentRoomMapindex);
+
+
+        int nextRoomNum = inputInt("Please enter the number of the next room you want to move to"); //asks the user for an input
+        boolean valid = checkValidInput(validMoves, nextRoomNum, totalOptions); //checks if the input is valid
+
+        while(valid == false){ //asks the user for an input till they input a valid inputs
+            print("Please enter a valid option");
+            nextRoomNum = inputInt("Please enter the number of the next room you want to move to");
+            valid = checkValidInput(validMoves, nextRoomNum, totalOptions);
+        }
+
+        return nextRoomNum;
+    }
+
+    public static Room moveRoom(int[][] map,Room[] roomList, Room currentRoom, int mapSize){
+        int listSize = roomList.length;
+        int currentRoomListIndex = searchRoomList(roomList,currentRoom,listSize);
+        int[] currentRoomMapindex = {search2DIntArrayR(map,currentRoomListIndex,mapSize),search2DIntArrayC(map,currentRoomListIndex,mapSize)}; //find the index of the current room the user is in
+
+        int nextRoomNum = askNextRoom(map,roomList,currentRoom,currentRoomMapindex);//gets the users input
+        Room nextRoom = roomList[nextRoomNum]; //finds the next room the user wants to move to
+        return nextRoom;
+    }
+    
+    public static boolean bookPuzzle(){
+        String answer = "CCGGAAG";
+        print("You search through the library and come across a shelf of books labeled A-G.\nYou notice that you cant remove any of the books from the shelf and after you try remove all 7 some sort of mechanism get set off.");
+        print("Enter the 7 books you want to pull out. The same book can be pulled out more than once.\nEnter -1 to exit the puzzle"); //informs the user what they have to do
+
+        String userInput = "";
+        boolean correctAnswer = false;
+
+        while(!(userInput.equals("-1")) && !(correctAnswer)){ //keeps asking for an input until the user get it correct of inputs -1 
+            userInput = inputString("Enter your answer:");
+
+            if(userInput.equals(answer)){ //check if the input is correct
+                print("You have entered the correct answer.\nYou hear a door unlock in the round table.");
+                setLocked(kingsStudy,true);
+                correctAnswer = true;
+            }else if(userInput.equals("-1")){
+                print("Stumped by the puzzle you decide to come back to it later.\nMaybe there is a clue in another room.");
+            }else{
+                print("Incorrect answer");
+            }
+
+        }    
+
+        return correctAnswer;
+
+    }
+
+    public static int loadFight(Room currentRoom, character[] characters){ //loads a fight between the user and an enemy
+        int result = 0;
+        if(getRoomNumber(currentRoom) == 1){ //check if the user is in a room where there is suposed to be a fight
+            result = startFight(characters[0],characters[1]); //starts a fight
+        }else if(getRoomNumber(currentRoom) == 5){
+            result = startFight(characters[0],characters[2]);
+        }else if(getRoomNumber(currentRoom) == 10){
+            result = startFight(characters[0],characters[3]);
+        }else if(getRoomNumber(currentRoom) == 14){
+            result = startFight(characters[0],characters[4]);
+        }else{
+            result = 0;
+        }
+
+        return result;
+    }
+
+    public static boolean checkValidInputString(String[] validMoves, String userInput, int totalOptions){ //checks if the user has input a valid option from a list of strings
+        boolean validMove = false;
+        for(int i = 0; i < totalOptions; i++){
+            if(validMoves[i].equals(userInput)){
+                validMove  = true;
+            }
+        }
+        return validMove;
+    }    
+
+    public static String askInput(Room currentRoom){ //asks for user input
+        final int totalOptions = 5;
+        String [] validOptions = {"","","","","/q"};
+        String newOption = "";
+        String userInput = "";
+        boolean valid = false;
+
+
+        for(int i = 0; i < 4; i++){ //generates valid options
+            if(getOptions(currentRoom , i) == "" || getOptionComplete(currentRoom , i) == true ){
+                validOptions[i] = "";
+            }else{
+                newOption = getOptions(currentRoom , i);
+                validOptions[i] = newOption.substring(0,1);
+            }
+        }
+
+        getAllOptions(currentRoom);
+        print("Enter /q to quit the game");
+        userInput = inputString("Select an option:"); //asks for ui
+        valid = checkValidInputString(validOptions,userInput,totalOptions); //checks if input is valid
+
+        while(valid == false){
+            print("Please enter a valid option");
+            userInput = inputString("Select an option:");
+            valid = checkValidInputString(validOptions,userInput,totalOptions);
+        }
+
+
+        return userInput;
+    }
+
+    public static Room loadRoomMoveOnly(Room currentRoom, String userInput ,int[][]map,Room[]roomlist){ //runs if the only option in the room is to move
+        Room nextRoom = currentRoom;
+        if (userInput.equals("4")){
+            nextRoom = moveRoom(map,roomList,currentRoom,5); //calls the move room
+        }
+        return nextRoom;
+    }
+
+    public static Room loadRoom6(Room currentRoom, String userInput ,int[][]map,Room[]roomlist,character[] characters){ //runs if the user is in room 6
+        Room nextRoom = currentRoom;
+        if (userInput.equals("4")){
+            nextRoom = moveRoom(map,roomList,currentRoom,5);//calls the move room
+        }else{
+            print("You have found the knights great sword.\nYour attack has been increased by 5");//Runs if the user inputs search room
+            setAttack(characters[0], 10);
+            optionCompleted(currentRoom , 1);
+        }
+        return nextRoom;
+    }
+
+    public static Room loadRoom8(Room currentRoom, String userInput ,int[][]map,Room[]roomlist,character[] characters){//runs if the user is in room 8
+        Room nextRoom = currentRoom;
+        if (userInput.equals("4")){
+            nextRoom = moveRoom(map,roomList,currentRoom,5); //calls the move room
+        }else{
+            print("You find a sheet of paper.\nThe title reads Twinkle Twinkle Little Star.\nThe rest of the paper looks like its meant to be sheet music but the notes have faded away."); //Runs if the user input search room
+            optionCompleted(currentRoom , 1);
+        }
+        return nextRoom;
+    }
+
+    public static Room loadRoom9(Room currentRoom, String userInput ,int[][]map,Room[]roomlist,character[] characters){//runs if the user is in room 9
+        Room nextRoom = currentRoom;
+        boolean puzzleComplete = false;
+        if (userInput.equals("4")){
+            nextRoom = moveRoom(map,roomList,currentRoom,5); //calls the move room
+        }else{//runs if the user wants to attempt the puzzle
+            puzzleComplete = bookPuzzle();
+            if(puzzleComplete){ 
+                optionCompleted(currentRoom , 2);
+                print("You hear a door open in the round table");
+                setLocked(roomlist[11],true);
+            }
+        }
+        return nextRoom;
+    }
+
+    public static Room loadRoom11(Room currentRoom, String userInput ,int[][]map,Room[]roomlist,character[] characters){ //runs if the user is in room 11
+        Room nextRoom = currentRoom;
+        if (userInput.equals("4")){
+            nextRoom = moveRoom(map,roomList,currentRoom,5); //calls the move room
+        }else{
+            print("You have found the key to the throne room");//runs if the user searches the room
+            setLocked(roomlist[14],true);
+            optionCompleted(currentRoom , 1);
+        }
+        return nextRoom;
+    }
+
+    public static Room loadRoom12(Room currentRoom, String userInput ,int[][]map,Room[]roomlist,character[] characters){//runs if the user is in room 12
+        Room nextRoom = currentRoom;
+        if (userInput.equals("4")){
+            nextRoom = moveRoom(map,roomList,currentRoom,5);//calls the move room
+        }else if (userInput.equals("3")){
+            print("You have unlocked the Great Hall");
+            setLocked(roomlist[13],true); //unlock a room
+            optionCompleted(currentRoom , 3);
+        }else{
+            print("You have found the key to the King's room");
+            setLocked(roomlist[13],true);
+            optionCompleted(currentRoom , 1); //unlocks a room
+        }
+        return nextRoom;
+
+    }
+
+    public static Room processOption(Room currentRoom, String userinput ,int[][]map,Room[]roomlist,character[] characters){ //selects the right function to run  based on what room the user is in
+        Room nextRoom = currentRoom;
+        if(getRoomNumber(currentRoom) < 6 || getRoomNumber(currentRoom) == 7 || getRoomNumber(currentRoom) == 10 || getRoomNumber(currentRoom) >12){
+            nextRoom = loadRoomMoveOnly(currentRoom, userinput ,map,roomlist);
+        }else if(getRoomNumber(currentRoom) == 6){
+            nextRoom = loadRoom6(currentRoom, userinput , map, roomlist, characters);
+        }else if(getRoomNumber(currentRoom) == 8){
+            nextRoom = loadRoom8(currentRoom, userinput , map, roomlist, characters);
+        }else if(getRoomNumber(currentRoom) == 9){
+            nextRoom = loadRoom9(currentRoom, userinput , map, roomlist, characters);
+        }else if(getRoomNumber(currentRoom) == 11){
+            nextRoom = loadRoom11(currentRoom, userinput , map, roomlist, characters);
+        }else if(getRoomNumber(currentRoom) == 12){
+            nextRoom = loadRoom12(currentRoom, userinput , map, roomlist, characters);
+        }
+
+        return nextRoom;
+    }
+
+    public static Room loadGame(Room currentRoom,int[][]map,Room[]roomlist,character[] characters){
+        int result = 0;
+        String userInput = "";
+        Room nextRoom = currentRoom;
+        if(!(getFightComplete(currentRoom))){ //checks if there is a fight in the room
+            result = loadFight(currentRoom, characters);
+        }
+
+        if(result == - 1){ //checks if the user has won the fight
+            userInput = "/q";
+        }else if(getRoomNumber(currentRoom) == 14){
+            userInput = "/q";
+            setFightComplete(currentRoom, true);
+            print("With the dragon defeated you can finally claim the kings treasure.");
+        }else{
+            setFightComplete(currentRoom, true);
+        }
+
+        if(userInput.equals("/q")){ //ends the game id the user has been defeated or reached the end
+            nextRoom = roomlist[15];
+        }else{
+            userInput = askInput(currentRoom); //asks the user for another input
+            if(!(userInput.equals("/q"))){
+                nextRoom = processOption(currentRoom, userInput , map, roomlist, characters);
+            }else{
+                nextRoom = roomlist[15];
+            }
+        }
+
+        return nextRoom;
+    }
+    
+    public static void playGame(){ //runs the game
+        String name = inputString("Welcome to Castle Explorer 1.0. Please enter your character name:"); //asks the user for their name and introduces the controls of the game
+        print(name + " you are a knight who has been sent to explore the dungeon of the great king Alfred. \nNavigate the dungeon by entering the number of the options you wish to select.\nRumor has it that the castle has been invaded by monsters so be prepared to fight.");
+        boolean loop  = true;
+
+        int[][] map = {{-1,11,14,-1,-1}, //intitialises the map and the rooms
+                       {8,10,13,12,-1},
+                       {7,4,2,3,5},
+                       {9,-1,1,-1,6},
+                       {-1,-1,0,-1,-1}};
+        int mapSize = 5;
+
+        boolean[] validMoves0 = {true,false,false,false,false,true};
+        String[] roomOptions0 = {"","","","4. Move forward"};
+        Room entrance = createRoom(validMoves0,0,roomOptions0,"00. The Entrance");
+
+        boolean[] validMoves1 = {true,false,false,false,false,false};
+        String[] roomOptions1 = {"","","","4. Move forward"};
+        Room courtyard = createRoom(validMoves1,1,roomOptions1,"01. The Courtyard");
+
+        boolean[] validMoves2 = {true,false,true,true,false,true};
+        String[] roomOptions2 = {"","","","4. Move forward"};
+        Room corridoor1 = createRoom(validMoves2,2,roomOptions2,"02. Corridoor 1");
+
+        boolean[] validMoves3 = {true,false,true,true,false,true};
+        String[] roomOptions3 = {"","","","4. Move forward"};
+        Room corridoor2 = createRoom(validMoves3,3,roomOptions3,"03. Corridoor 2");
+
+        boolean[] validMoves4 = {true,false,true,true,false,true};
+        String[] roomOptions4 = {"","","","4. Move forward"};
+        Room corridoor3 = createRoom(validMoves4,4,roomOptions4,"04. Corridoor 3");
+
+        boolean[] validMoves5 = {false,true,true,false,false,false};
+        String[] roomOptions5 = {"","","","4. Move forward"};
+        Room guardsQuaters = createRoom(validMoves5,5,roomOptions5,"05. The Guards Quarters");
+
+        boolean[] validMoves6 = {true,false,false,false,true,true};
+        String[] roomOptions6 = {"1. Search room","","","4. Move forward"};
+        Room dungeon = createRoom(validMoves6,6,roomOptions6,"06. The Dungeon");
+
+        boolean[] validMoves7 = {true,true,false,true,false,true};
+        String[] roomOptions7 = {"","","","4. Move forward"};
+        Room corridoor4 = createRoom(validMoves7,7,roomOptions7,"07. Corridoor 4");
+
+        boolean[] validMoves8 = {false,true,false,false,true,true};
+        String[] roomOptions8 = {"1. Search room","","","4. Move forward"};
+        Room kingsRoom = createRoom(validMoves8,8,roomOptions8,"08. The King's Bedroom");
+
+        boolean[] validMoves9 = {true,false,false,false,false,true};
+        String[] roomOptions9 = {"","2. Attempt puzzle","","4. Move forward"};
+        Room grandLibrary = createRoom(validMoves9,9,roomOptions9,"09. The Grand Library");
+
+        boolean[] validMoves10 = {true,true,false,false,false,false};
+        String[] roomOptions10 = {"","","","4. Move forward"};
+        Room roundTable = createRoom(validMoves10,10,roomOptions10,"10. The Round Table");
+
+        boolean[] validMoves11 = {false,true,false,false,true,true};
+        String[] roomOptions11 = {"1. Search room","","","4. Move forward"};
+        Room kingsStudy = createRoom(validMoves11,11,roomOptions1,"11. The Kings Secret Study");
+
+        boolean[] validMoves12 = {false,true,true,false,false,true};
+        String[] roomOptions12 = {"1. Search room","","3. Unlock The Great Hall","4. Move forward"};
+        Room kitchen = createRoom(validMoves12,12,roomOptions12,"12. The Kitchen");
+
+        boolean[] validMoves13 = {true,true,false,true,true,true};
+        String[] roomOptions13 = {"","","","4. Move forward"};
+        Room greatHall = createRoom(validMoves13,13,roomOptions13,"13. The Great Hall");
+
+        boolean[] validMoves14 = {false,true,false,false,true,false};
+        String[] roomOptions14 = {"","","",""};
+        Room throneRoom = createRoom(validMoves14,14,roomOptions14,"14. The Throne Room");
+
+        boolean[] validMoves15 = {false,false,false,false,false,false};
+        String[] roomOptions15 = {"","","",""};
+        Room exit = createRoom(validMoves15,-1,roomOptions15,"exit");
+
+        Room[] roomlist = {entrance,courtyard,corridoor1,corridoor2,corridoor3,guardsQuaters,dungeon,corridoor4,kingsRoom,grandLibrary,roundTable,kingsStudy,kitchen,greatHall,throneRoom,exit};
+
+        character MC = createCharacter("MC",0,5,5,15); //initialises all the characters
+        character goblin = createCharacter("goblin",1,5,5,15);
+        character kingsGuard = createCharacter("King's guard",2,5,5,15);
+        character goblinKing = createCharacter("Goblin King",3,5,5,15);
+        character dragon = createCharacter("Dragon",4,4,5,25);
+
+        character[] characters = {MC,goblin,kingsGuard,goblinKing,dragon};
+
+        Room currentRoom = entrance;
+
+        while(loop == true){ //loops till the user wants to quit
+            print("You are now in " + getRoomName(currentRoom));
+            currentRoom =  loadGame(currentRoom, map, roomlist, characters);
+            if(getRoomNumber(currentRoom) == -1){
+                loop = false;
+            }
+        }    
+
+        print("Thanks for playing.");
+    }    
+    
+}
